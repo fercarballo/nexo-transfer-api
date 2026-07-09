@@ -1,0 +1,39 @@
+# Ejecutor real de CI (el repositorio se aloja en GitHub).
+# Las definiciones equivalentes para GitLab y Jenkins están en .gitlab-ci.yml y Jenkinsfile.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    name: Build & Test (unit + BDD)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Test (unit + BDD)
+        run: mvn -B verify
+
+      - name: Package
+        run: mvn -B -DskipTests package
+
+      - name: Publicar reportes como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            target/surefire-reports/
+            target/cucumber/
+          if-no-files-found: ignore

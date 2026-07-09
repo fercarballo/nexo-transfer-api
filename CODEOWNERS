@@ -1,0 +1,10 @@
+# Propietarios del código. Todo PR requiere su revisión.
+# Referencia: https://docs.github.com/es/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+*                   @fercarballo
+
+# Áreas sensibles (mismo owner en este portfolio; en un equipo real serían roles distintos):
+/src/main/java/com/nexo/transfer/security/   @fercarballo
+/.github/                                    @fercarballo
+/.gitlab-ci.yml                              @fercarballo
+/Jenkinsfile                                 @fercarballo

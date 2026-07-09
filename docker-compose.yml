@@ -1,0 +1,21 @@
+# Reproducibilidad local: levanta la API en un contenedor con un solo comando.
+# Docker Compose es el primer nivel de reproducibilidad del ecosistema (Kubernetes
+# se incorpora después, en nexo-quality-platform, una vez que este flujo funciona).
+services:
+  api:
+    build: .
+    image: nexo-transfer-api:0.1.0
+    container_name: nexo-transfer-api
+    ports:
+      - "8080:8080"
+    environment:
+      # En local alcanza con los tokens de desarrollo de application.yml.
+      # Para sobreescribirlos, definir las variables en un archivo .env (ver .env.example).
+      PORT: 8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped

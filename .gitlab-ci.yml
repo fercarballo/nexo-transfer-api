@@ -1,0 +1,43 @@
+# Pipeline principal — GitLab CI.
+#
+# Definición portable para entornos GitLab (el stack del rol objetivo incluye GitLab y Jenkins).
+# En este portfolio el repositorio se aloja en GitHub y la ejecución REAL de CI corre en
+# GitHub Actions (.github/workflows/ci.yml). Este archivo y el Jenkinsfile documentan el mismo
+# pipeline para GitLab y Jenkins respectivamente; no se ejecutan automáticamente sobre GitHub,
+# de modo que la misma batería no corre por duplicado sobre el mismo commit.
+image: maven:3.9-eclipse-temurin-21
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository -Dmaven.artifact.threads=8"
+
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .m2/repository
+
+stages:
+  - test
+  - package
+
+# Quality gate: las pruebas deben pasar para avanzar.
+test:
+  stage: test
+  script:
+    - mvn -B verify
+  artifacts:
+    when: always
+    paths:
+      - target/surefire-reports/
+      - target/cucumber/
+    reports:
+      junit: target/surefire-reports/TEST-*.xml
+
+package:
+  stage: package
+  needs: ["test"]
+  script:
+    - mvn -B -DskipTests package
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 1 week

@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: nexo-transfer-api
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Autenticación (MVP). Estos tokens son valores de DESARROLLO LOCAL, no secretos:
+# no dan acceso a nada real y existen para poder correr y testear localmente.
+# En un entorno real, este mapa se inyecta por variable de entorno y NUNCA se versiona
+# (ver .env.example y docs/runbooks/local-setup.md).
+nexo:
+  security:
+    tokens:
+      tok-ana-local-dev: user-ana
+      tok-luis-local-dev: user-luis

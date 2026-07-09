@@ -1,0 +1,2564 @@
+{
+  "collection": {
+    "item": [
+      {
+        "id": "01bdd745-949c-4d2f-86f0-52445a003532",
+        "name": "Balance de origen",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "v1",
+              "accounts",
+              "{{srcAccount}}",
+              "balance"
+            ],
+            "host": [
+              "{{baseUrl}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "GET"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "e644a026-a5dd-425a-b00d-fb0b4664e9dd",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                "pm.test('devuelve balance y moneda', function () {",
+                "  var b = pm.response.json();",
+                "  pm.expect(b).to.have.property('balance');",
+                "  pm.expect(b.currency).to.eql('ARS');",
+                "});"
+              ],
+              "_lastExecutionId": "9b399cad-1b6a-4655-a5de-9f079d315b97"
+            }
+          }
+        ]
+      },
+      {
+        "id": "7ff7120e-1bc4-412f-9897-45ec7f157885",
+        "name": "Crear transferencia (camino feliz)",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "v1",
+              "transfers"
+            ],
+            "host": [
+              "{{baseUrl}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 1500.00,\n  \"currency\": \"ARS\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "f97edfe6-3a8f-4b90-85a4-c657c4efc6ba",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                "pm.test('queda POSTED con id', function () {",
+                "  var t = pm.response.json();",
+                "  pm.expect(t.status).to.eql('POSTED');",
+                "  pm.expect(t.id).to.be.a('string');",
+                "});"
+              ],
+              "_lastExecutionId": "11b41349-cb76-45b8-adb0-509343c276f7"
+            }
+          }
+        ]
+      },
+      {
+        "id": "e5013cd0-888e-4511-8bac-7568f931479e",
+        "name": "Rechazo por fondos insuficientes",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "v1",
+              "transfers"
+            ],
+            "host": [
+              "{{baseUrl}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"sourceAccountId\": \"acc-ana-002\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 999999.00,\n  \"currency\": \"ARS\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "e9109162-51fe-4fa8-96c3-a096fb61fa79",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('422 Unprocessable', function () { pm.response.to.have.status(422); });",
+                "pm.test('code INSUFFICIENT_FUNDS', function () {",
+                "  pm.expect(pm.response.json().code).to.eql('INSUFFICIENT_FUNDS');",
+                "});"
+              ],
+              "_lastExecutionId": "2359938a-3159-4ad0-be85-f62f28750b3e"
+            }
+          }
+        ]
+      },
+      {
+        "id": "51d28194-f0ae-4f41-9777-c5f52a55a2da",
+        "name": "Rechazo sin autenticacion",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "v1",
+              "transfers"
+            ],
+            "host": [
+              "{{baseUrl}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 10.00,\n  \"currency\": \"ARS\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "005db142-ff9c-4a71-89e9-676a6eb01201",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+              ],
+              "_lastExecutionId": "276033fb-1b09-43a0-809f-ab93d6fff385"
+            }
+          }
+        ]
+      },
+      {
+        "id": "4b4f14f7-bc02-4e66-8dbb-3a625e11db40",
+        "name": "Idempotencia - primera llamada",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "v1",
+              "transfers"
+            ],
+            "host": [
+              "{{baseUrl}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Idempotency-Key",
+              "value": "{{idemKey}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 50.00,\n  \"currency\": \"ARS\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "7b3ebc5c-4f10-41c2-a26b-67908e77405e",
+              "type": "text/javascript",
+              "exec": [
+                "pm.collectionVariables.set('idemKey', 'pm-' + Date.now());"
+              ],
+              "_lastExecutionId": "7c987787-47bb-469c-ac99-420ca6e6f215"
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "c786defc-b88a-4797-9852-46451ba34cc4",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                "pm.collectionVariables.set('idemId', pm.response.json().id);"
+              ],
+              "_lastExecutionId": "acac038b-43f3-45b1-82b9-3f309829df7e"
+            }
+          }
+        ]
+      },
+      {
+        "id": "b15959b1-2bb1-4218-be47-971ade56a0ee",
+        "name": "Idempotencia - reintento con la misma key",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "v1",
+              "transfers"
+            ],
+            "host": [
+              "{{baseUrl}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Idempotency-Key",
+              "value": "{{idemKey}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 50.00,\n  \"currency\": \"ARS\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "d6b3556e-c443-48d3-9713-4c7be2ba6ddd",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                "pm.test('devuelve la MISMA transferencia (no duplica)', function () {",
+                "  pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('idemId'));",
+                "});"
+              ],
+              "_lastExecutionId": "c7d21392-5b70-432d-9d21-6b6d210b2b5f"
+            }
+          }
+        ]
+      }
+    ],
+    "event": [],
+    "variable": [
+      {
+        "type": "any",
+        "value": "http://localhost:8080",
+        "key": "baseUrl"
+      },
+      {
+        "type": "any",
+        "value": "tok-ana-local-dev",
+        "key": "token"
+      },
+      {
+        "type": "any",
+        "value": "acc-ana-001",
+        "key": "srcAccount"
+      },
+      {
+        "type": "any",
+        "value": "acc-luis-001",
+        "key": "dstAccount"
+      }
+    ],
+    "info": {
+      "_postman_id": "bbd92ab5-e117-47cc-a984-45974b714761",
+      "name": "Nexo Transfer API",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "description": {
+        "content": "Colección de pruebas de API de nexo-transfer-api. Cubre el camino feliz, casos negativos (fondos, auth, titularidad) e idempotencia. Ejecutable con Newman para generar evidencia.",
+        "type": "text/plain"
+      }
+    }
+  },
+  "environment": {
+    "id": "3de908b5-ac12-437e-95b9-d9bc88cf0357",
+    "values": []
+  },
+  "globals": {
+    "id": "aa901a23-0649-4ccc-965f-7bd306f18cc6",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 6,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 7,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequests": {
+        "total": 6,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 6,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 6,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 10,
+        "pending": 0,
+        "failed": 0
+      },
+      "testScripts": {
+        "total": 6,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequestScripts": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 11.833333333333334,
+      "responseMin": 2,
+      "responseMax": 36,
+      "responseSd": 13.082006302126938,
+      "dnsAverage": 0,
+      "dnsMin": 0,
+      "dnsMax": 0,
+      "dnsSd": 0,
+      "firstByteAverage": 0,
+      "firstByteMin": 0,
+      "firstByteMax": 0,
+      "firstByteSd": 0,
+      "started": 1783632029215,
+      "completed": 1783632029357
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 6,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "2f96e351-08e8-4cf7-9957-5153260af7f5",
+          "httpRequestId": "2df7b972-dedb-4171-a934-b226cdbc9072"
+        },
+        "item": {
+          "id": "01bdd745-949c-4d2f-86f0-52445a003532",
+          "name": "Balance de origen",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{srcAccount}}",
+                "balance"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "e644a026-a5dd-425a-b00d-fb0b4664e9dd",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('devuelve balance y moneda', function () {",
+                  "  var b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('balance');",
+                  "  pm.expect(b.currency).to.eql('ARS');",
+                  "});"
+                ],
+                "_lastExecutionId": "9b399cad-1b6a-4655-a5de-9f079d315b97"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "http",
+            "port": "8080",
+            "path": [
+              "api",
+              "v1",
+              "accounts",
+              "acc-ana-001",
+              "balance"
+            ],
+            "host": [
+              "localhost"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer tok-ana-local-dev"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "2cdbd67b-7365-4809-93ae-7bc941b43df8",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "localhost:8080",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET"
+        },
+        "response": {
+          "id": "f6566920-5b37-47f2-b549-e7d45ee8e6b9",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "X-Request-Id",
+              "value": "c5c9808d-72ba-4b2d-a70a-ea382bbac3a6"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 09 Jul 2026 21:20:29 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              97,
+              99,
+              99,
+              111,
+              117,
+              110,
+              116,
+              73,
+              100,
+              34,
+              58,
+              34,
+              97,
+              99,
+              99,
+              45,
+              97,
+              110,
+              97,
+              45,
+              48,
+              48,
+              49,
+              34,
+              44,
+              34,
+              98,
+              97,
+              108,
+              97,
+              110,
+              99,
+              101,
+              34,
+              58,
+              49,
+              48,
+              48,
+              48,
+              48,
+              48,
+              46,
+              48,
+              48,
+              44,
+              34,
+              99,
+              117,
+              114,
+              114,
+              101,
+              110,
+              99,
+              121,
+              34,
+              58,
+              34,
+              65,
+              82,
+              83,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 23,
+          "responseSize": 64
+        },
+        "id": "01bdd745-949c-4d2f-86f0-52445a003532",
+        "assertions": [
+          {
+            "assertion": "200 OK",
+            "skipped": false
+          },
+          {
+            "assertion": "devuelve balance y moneda",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "2cfce85b-4364-410e-b2ee-f49dca66471f",
+          "length": 6,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "ccc0e4a3-dff4-44e7-b49b-e839a9b6ec9d"
+        },
+        "item": {
+          "id": "7ff7120e-1bc4-412f-9897-45ec7f157885",
+          "name": "Crear transferencia (camino feliz)",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "transfers"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 1500.00,\n  \"currency\": \"ARS\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "f97edfe6-3a8f-4b90-85a4-c657c4efc6ba",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('queda POSTED con id', function () {",
+                  "  var t = pm.response.json();",
+                  "  pm.expect(t.status).to.eql('POSTED');",
+                  "  pm.expect(t.id).to.be.a('string');",
+                  "});"
+                ],
+                "_lastExecutionId": "11b41349-cb76-45b8-adb0-509343c276f7"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "http",
+            "port": "8080",
+            "path": [
+              "api",
+              "v1",
+              "transfers"
+            ],
+            "host": [
+              "localhost"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer tok-ana-local-dev"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "7620e53b-d26a-4e9e-ba20-4cd151bdbd72",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "localhost:8080",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "122",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"sourceAccountId\": \"acc-ana-001\",\n  \"destinationAccountId\": \"acc-luis-001\",\n  \"amount\": 1500.00,\n  \"currency\": \"ARS\"\n}"
+          }
+        },
+        "response": {
+          "id": "5f5f92fc-caeb-4002-abef-fb2f0c98873d",
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "X-Request-Id",
+              "value": "42332bde-190e-4c88-b876-323b95f74857"
+            },
+            {
+              "key": "Location",
+              "value": "/api/v1/transfers/f10b939d-a41b-4680-8db6-e1357a7bfe9b"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 09 Jul 2026 21:20:29 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              34,
+              58,
+              34,
+              102,
+              49,
+              48,
+              98,
+              57,
+              51,
+              57,
+              100,
+              45,
+              97,
+              52,
+              49,
+              98,
+              45,
+              52,
+              54,
+              56,
+              48,
+              45,
+              56,
+              100,
+              98,
+              54,
+              45,
+              101,
+              49,
+              51,
+              53,
+              55,
+              97,
+              55,
+              98,
+              102,
+              101,
+              57,
+              98,
+              34,
+              44,
+              34,
+              115,
+              111,
+              117,
+              114,
+              99,
+              101,
+              65,
+              99,
+              99,
+              111,
+              117,
+              110,
+              116,
+              73,
+              100,
+              34,
+              58,
+              34,
+              97,
+              99,
+              99,
+              45,
+              97,
+              110,
+              97,
+              45,
+              48,
+              48,
+              49,
+              34,
+              44,
+              34,
+              100,
+              101,
+              115,
+              116,
+              105,
+              110,
+              97,
+              116,
+              105,
+              111,
+              110,
+              65,
+              99,
+              99,
+              111,
+              117,
+              110,
+              116,
+              73,
+              100,
+              34,
+              58,
+              34,
+              97,
+              99,
+              99,
+              45,
+              108,
+              117,
+              105,
+              115,
+              45,
+              48,
+              48,
+              49,
+              34,
+              44,
+              34,
+              97,
+              109,
+              111,
+              117,
+              110,
+              116,
+              34,
+              58,
+              49,
+              53,
+              48,
+              48,
+              46,
+              48,
+              48,
+              44,
+              34,
+              99,
+              117,
+              114,
+              114,
+              101,
+              110,
+              99,
+              121,
+              34,
+              58,
+              34,
+              65,
+              82,
+              83,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              34,
+              58,
+              34,
+              80,
+              79,
+              83,
+              84,
+              69,
+              68,
+              34,
+              44,
+              34,
+              99,
+              114,
+              101,
+              97,
+              116,
+              101,
+              100,
+              65,
+              116,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              55,
+              45,
+              48,
+              57,
+              84,
+              50,
+              49,
+              58,
+              50,
+              48,
+              58,
+              50,
+              57,
+              46,
+              50,
+              57,
+              52,
+              55,
+              53,
+              50,
+              90,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 36,
+          "responseSize": 209
+        },
+        "id": "7ff7120e-1bc4-412f-9897-45ec7f157885",
+        "assertions": [
+          {
+            "assertion": "201 Created",
+            "skipped": false
+          },
+          {
+            "assertion": "queda POSTED con id",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "eb890aec-3ac1-4396-8cde-d3daad9f1600",
+          "length": 6,
+          "cycles": 1,
+          "position": 2,
+          "iteration": 0,
+          "httpRequestId": "00e91778-9def-4470-b574-0fd59d0bb847"
+        },
+        "item": {
+          "id": "e5013cd0-888e-4511-8bac-7568f931479e",
+          "name": "Rechazo por fondos insuficientes",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "transfers"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountId\": \"acc-ana-002\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 999999.00,\n  \"currency\": \"ARS\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "e9109162-51fe-4fa8-96c3-a096fb61fa79",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422 Unprocessable', function () { pm.response.to.have.status(422); });",
+                  "pm.test('code INSUFFICIENT_FUNDS', function () {",
+                  "  pm.expect(pm.response.json().code).to.eql('INSUFFICIENT_FUNDS');",
+                  "});"
+                ],
+                "_lastExecutionId": "2359938a-3159-4ad0-be85-f62f28750b3e"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "http",
+            "port": "8080",
+            "path": [
+              "api",
+              "v1",
+              "transfers"
+            ],
+            "host": [
+              "localhost"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer tok-ana-local-dev"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "9372777b-2b86-4a0c-ac13-e96d0614d55b",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "localhost:8080",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "124",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"sourceAccountId\": \"acc-ana-002\",\n  \"destinationAccountId\": \"acc-luis-001\",\n  \"amount\": 999999.00,\n  \"currency\": \"ARS\"\n}"
+          }
+        },
+        "response": {
+          "id": "165bc7b0-8b17-4bd0-b353-9d5ff1c9b11f",
+          "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+          "code": 422,
+          "header": [
+            {
+              "key": "X-Request-Id",
+              "value": "073c3236-3b15-4b0f-9498-8a5c560a7b01"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 09 Jul 2026 21:20:29 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              34,
+              73,
+              78,
+              83,
+              85,
+              70,
+              70,
+              73,
+              67,
+              73,
+              69,
+              78,
+              84,
+              95,
+              70,
+              85,
+              78,
+              68,
+              83,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              70,
+              111,
+              110,
+              100,
+              111,
+              115,
+              32,
+              105,
+              110,
+              115,
+              117,
+              102,
+              105,
+              99,
+              105,
+              101,
+              110,
+              116,
+              101,
+              115,
+              32,
+              101,
+              110,
+              32,
+              108,
+              97,
+              32,
+              99,
+              117,
+              101,
+              110,
+              116,
+              97,
+              58,
+              32,
+              97,
+              99,
+              99,
+              45,
+              97,
+              110,
+              97,
+              45,
+              48,
+              48,
+              50,
+              34,
+              44,
+              34,
+              114,
+              101,
+              113,
+              117,
+              101,
+              115,
+              116,
+              73,
+              100,
+              34,
+              58,
+              34,
+              48,
+              55,
+              51,
+              99,
+              51,
+              50,
+              51,
+              54,
+              45,
+              51,
+              98,
+              49,
+              53,
+              45,
+              52,
+              98,
+              48,
+              102,
+              45,
+              57,
+              52,
+              57,
+              56,
+              45,
+              56,
+              97,
+              53,
+              99,
+              53,
+              54,
+              48,
+              97,
+              55,
+              98,
+              48,
+              49,
+              34,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              115,
+              116,
+              97,
+              109,
+              112,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              55,
+              45,
+              48,
+              57,
+              84,
+              50,
+              49,
+              58,
+              50,
+              48,
+              58,
+              50,
+              57,
+              46,
+              51,
+              49,
+              49,
+              54,
+              51,
+              51,
+              90,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 5,
+          "responseSize": 181
+        },
+        "id": "e5013cd0-888e-4511-8bac-7568f931479e",
+        "assertions": [
+          {
+            "assertion": "422 Unprocessable",
+            "skipped": false
+          },
+          {
+            "assertion": "code INSUFFICIENT_FUNDS",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "25f8eb18-cc8c-4ce0-8a4b-a2e2a3339b67",
+          "length": 6,
+          "cycles": 1,
+          "position": 3,
+          "iteration": 0,
+          "httpRequestId": "06377ed5-c55f-442e-bc00-e64f45399f0a"
+        },
+        "item": {
+          "id": "51d28194-f0ae-4f41-9777-c5f52a55a2da",
+          "name": "Rechazo sin autenticacion",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "transfers"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 10.00,\n  \"currency\": \"ARS\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "005db142-ff9c-4a71-89e9-676a6eb01201",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ],
+                "_lastExecutionId": "276033fb-1b09-43a0-809f-ab93d6fff385"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "http",
+            "port": "8080",
+            "path": [
+              "api",
+              "v1",
+              "transfers"
+            ],
+            "host": [
+              "localhost"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "026f9f8e-3b91-43b0-80f7-ec536a3d30cd",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "localhost:8080",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "120",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"sourceAccountId\": \"acc-ana-001\",\n  \"destinationAccountId\": \"acc-luis-001\",\n  \"amount\": 10.00,\n  \"currency\": \"ARS\"\n}"
+          }
+        },
+        "response": {
+          "id": "c9d34d76-981c-45b0-8a17-65080ffe9af2",
+          "status": "Unauthorized",
+          "code": 401,
+          "header": [
+            {
+              "key": "X-Request-Id",
+              "value": "30b1d66c-244c-4e42-a442-11d1a478b9ee"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json;charset=ISO-8859-1"
+            },
+            {
+              "key": "Content-Length",
+              "value": "175"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 09 Jul 2026 21:20:29 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              34,
+              85,
+              78,
+              65,
+              85,
+              84,
+              72,
+              79,
+              82,
+              73,
+              90,
+              69,
+              68,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              70,
+              97,
+              108,
+              116,
+              97,
+              32,
+              101,
+              108,
+              32,
+              104,
+              101,
+              97,
+              100,
+              101,
+              114,
+              32,
+              65,
+              117,
+              116,
+              104,
+              111,
+              114,
+              105,
+              122,
+              97,
+              116,
+              105,
+              111,
+              110,
+              58,
+              32,
+              66,
+              101,
+              97,
+              114,
+              101,
+              114,
+              32,
+              60,
+              116,
+              111,
+              107,
+              101,
+              110,
+              62,
+              46,
+              34,
+              44,
+              34,
+              114,
+              101,
+              113,
+              117,
+              101,
+              115,
+              116,
+              73,
+              100,
+              34,
+              58,
+              34,
+              51,
+              48,
+              98,
+              49,
+              100,
+              54,
+              54,
+              99,
+              45,
+              50,
+              52,
+              52,
+              99,
+              45,
+              52,
+              101,
+              52,
+              50,
+              45,
+              97,
+              52,
+              52,
+              50,
+              45,
+              49,
+              49,
+              100,
+              49,
+              97,
+              52,
+              55,
+              56,
+              98,
+              57,
+              101,
+              101,
+              34,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              115,
+              116,
+              97,
+              109,
+              112,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              55,
+              45,
+              48,
+              57,
+              84,
+              50,
+              49,
+              58,
+              50,
+              48,
+              58,
+              50,
+              57,
+              46,
+              51,
+              50,
+              51,
+              57,
+              56,
+              48,
+              90,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 2,
+          "responseSize": 175
+        },
+        "id": "51d28194-f0ae-4f41-9777-c5f52a55a2da",
+        "assertions": [
+          {
+            "assertion": "401 Unauthorized",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "8b1e1331-e075-4700-8995-4e6a96c1c6d7",
+          "length": 6,
+          "cycles": 1,
+          "position": 4,
+          "iteration": 0,
+          "httpRequestId": "222bdcd9-b18b-4faa-9f61-b4ef7a29e821"
+        },
+        "item": {
+          "id": "4b4f14f7-bc02-4e66-8dbb-3a625e11db40",
+          "name": "Idempotencia - primera llamada",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "transfers"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 50.00,\n  \"currency\": \"ARS\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "7b3ebc5c-4f10-41c2-a26b-67908e77405e",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('idemKey', 'pm-' + Date.now());"
+                ],
+                "_lastExecutionId": "7c987787-47bb-469c-ac99-420ca6e6f215"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "c786defc-b88a-4797-9852-46451ba34cc4",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set('idemId', pm.response.json().id);"
+                ],
+                "_lastExecutionId": "acac038b-43f3-45b1-82b9-3f309829df7e"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "http",
+            "port": "8080",
+            "path": [
+              "api",
+              "v1",
+              "transfers"
+            ],
+            "host": [
+              "localhost"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer tok-ana-local-dev"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Idempotency-Key",
+              "value": "pm-1783632029333"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "4778e42d-a44a-4478-b481-44c98acb3018",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "localhost:8080",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "120",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"sourceAccountId\": \"acc-ana-001\",\n  \"destinationAccountId\": \"acc-luis-001\",\n  \"amount\": 50.00,\n  \"currency\": \"ARS\"\n}"
+          }
+        },
+        "response": {
+          "id": "85ac0491-0446-4530-bacb-a4118f2c2aac",
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "X-Request-Id",
+              "value": "58126971-c0f2-44c0-8475-e2c68670bffb"
+            },
+            {
+              "key": "Location",
+              "value": "/api/v1/transfers/99ae4b10-4e71-4883-951b-36d022f42414"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 09 Jul 2026 21:20:29 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              34,
+              58,
+              34,
+              57,
+              57,
+              97,
+              101,
+              52,
+              98,
+              49,
+              48,
+              45,
+              52,
+              101,
+              55,
+              49,
+              45,
+              52,
+              56,
+              56,
+              51,
+              45,
+              57,
+              53,
+              49,
+              98,
+              45,
+              51,
+              54,
+              100,
+              48,
+              50,
+              50,
+              102,
+              52,
+              50,
+              52,
+              49,
+              52,
+              34,
+              44,
+              34,
+              115,
+              111,
+              117,
+              114,
+              99,
+              101,
+              65,
+              99,
+              99,
+              111,
+              117,
+              110,
+              116,
+              73,
+              100,
+              34,
+              58,
+              34,
+              97,
+              99,
+              99,
+              45,
+              97,
+              110,
+              97,
+              45,
+              48,
+              48,
+              49,
+              34,
+              44,
+              34,
+              100,
+              101,
+              115,
+              116,
+              105,
+              110,
+              97,
+              116,
+              105,
+              111,
+              110,
+              65,
+              99,
+              99,
+              111,
+              117,
+              110,
+              116,
+              73,
+              100,
+              34,
+              58,
+              34,
+              97,
+              99,
+              99,
+              45,
+              108,
+              117,
+              105,
+              115,
+              45,
+              48,
+              48,
+              49,
+              34,
+              44,
+              34,
+              97,
+              109,
+              111,
+              117,
+              110,
+              116,
+              34,
+              58,
+              53,
+              48,
+              46,
+              48,
+              48,
+              44,
+              34,
+              99,
+              117,
+              114,
+              114,
+              101,
+              110,
+              99,
+              121,
+              34,
+              58,
+              34,
+              65,
+              82,
+              83,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              34,
+              58,
+              34,
+              80,
+              79,
+              83,
+              84,
+              69,
+              68,
+              34,
+              44,
+              34,
+              99,
+              114,
+              101,
+              97,
+              116,
+              101,
+              100,
+              65,
+              116,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              55,
+              45,
+              48,
+              57,
+              84,
+              50,
+              49,
+              58,
+              50,
+              48,
+              58,
+              50,
+              57,
+              46,
+              51,
+              51,
+              56,
+              56,
+              52,
+              48,
+              90,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 2,
+          "responseSize": 207
+        },
+        "id": "4b4f14f7-bc02-4e66-8dbb-3a625e11db40",
+        "assertions": [
+          {
+            "assertion": "201 Created",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "f78cae37-93d9-4190-8efb-12247ebf9095",
+          "length": 6,
+          "cycles": 1,
+          "position": 5,
+          "iteration": 0,
+          "httpRequestId": "7b425153-751c-4585-bd65-493e8b7c32cd"
+        },
+        "item": {
+          "id": "b15959b1-2bb1-4218-be47-971ade56a0ee",
+          "name": "Idempotencia - reintento con la misma key",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "transfers"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 50.00,\n  \"currency\": \"ARS\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "d6b3556e-c443-48d3-9713-4c7be2ba6ddd",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('devuelve la MISMA transferencia (no duplica)', function () {",
+                  "  pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('idemId'));",
+                  "});"
+                ],
+                "_lastExecutionId": "c7d21392-5b70-432d-9d21-6b6d210b2b5f"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "http",
+            "port": "8080",
+            "path": [
+              "api",
+              "v1",
+              "transfers"
+            ],
+            "host": [
+              "localhost"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer tok-ana-local-dev"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Idempotency-Key",
+              "value": "pm-1783632029333"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "767dcf75-e800-4f78-9de0-ea711a48cd22",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "localhost:8080",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "120",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"sourceAccountId\": \"acc-ana-001\",\n  \"destinationAccountId\": \"acc-luis-001\",\n  \"amount\": 50.00,\n  \"currency\": \"ARS\"\n}"
+          }
+        },
+        "response": {
+          "id": "b36d2930-f8c4-4250-803b-9344bf371d41",
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "X-Request-Id",
+              "value": "74d7459e-4bfe-4c68-b8fb-6aee31e34ca7"
+            },
+            {
+              "key": "Location",
+              "value": "/api/v1/transfers/99ae4b10-4e71-4883-951b-36d022f42414"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 09 Jul 2026 21:20:29 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              34,
+              58,
+              34,
+              57,
+              57,
+              97,
+              101,
+              52,
+              98,
+              49,
+              48,
+              45,
+              52,
+              101,
+              55,
+              49,
+              45,
+              52,
+              56,
+              56,
+              51,
+              45,
+              57,
+              53,
+              49,
+              98,
+              45,
+              51,
+              54,
+              100,
+              48,
+              50,
+              50,
+              102,
+              52,
+              50,
+              52,
+              49,
+              52,
+              34,
+              44,
+              34,
+              115,
+              111,
+              117,
+              114,
+              99,
+              101,
+              65,
+              99,
+              99,
+              111,
+              117,
+              110,
+              116,
+              73,
+              100,
+              34,
+              58,
+              34,
+              97,
+              99,
+              99,
+              45,
+              97,
+              110,
+              97,
+              45,
+              48,
+              48,
+              49,
+              34,
+              44,
+              34,
+              100,
+              101,
+              115,
+              116,
+              105,
+              110,
+              97,
+              116,
+              105,
+              111,
+              110,
+              65,
+              99,
+              99,
+              111,
+              117,
+              110,
+              116,
+              73,
+              100,
+              34,
+              58,
+              34,
+              97,
+              99,
+              99,
+              45,
+              108,
+              117,
+              105,
+              115,
+              45,
+              48,
+              48,
+              49,
+              34,
+              44,
+              34,
+              97,
+              109,
+              111,
+              117,
+              110,
+              116,
+              34,
+              58,
+              53,
+              48,
+              46,
+              48,
+              48,
+              44,
+              34,
+              99,
+              117,
+              114,
+              114,
+              101,
+              110,
+              99,
+              121,
+              34,
+              58,
+              34,
+              65,
+              82,
+              83,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              34,
+              58,
+              34,
+              80,
+              79,
+              83,
+              84,
+              69,
+              68,
+              34,
+              44,
+              34,
+              99,
+              114,
+              101,
+              97,
+              116,
+              101,
+              100,
+              65,
+              116,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              55,
+              45,
+              48,
+              57,
+              84,
+              50,
+              49,
+              58,
+              50,
+              48,
+              58,
+              50,
+              57,
+              46,
+              51,
+              51,
+              56,
+              56,
+              52,
+              48,
+              90,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 3,
+          "responseSize": 207
+        },
+        "id": "b15959b1-2bb1-4218-be47-971ade56a0ee",
+        "assertions": [
+          {
+            "assertion": "201 Created",
+            "skipped": false
+          },
+          {
+            "assertion": "devuelve la MISMA transferencia (no duplica)",
+            "skipped": false
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 1043
+    },
+    "failures": [],
+    "error": null
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "info": {
+    "name": "Nexo Transfer API",
+    "description": "Colección de pruebas de API de nexo-transfer-api. Cubre el camino feliz, casos negativos (fondos, auth, titularidad) e idempotencia. Ejecutable con Newman para generar evidencia.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "tok-ana-local-dev" },
+    { "key": "srcAccount", "value": "acc-ana-001" },
+    { "key": "dstAccount", "value": "acc-luis-001" }
+  ],
+  "item": [
+    {
+      "name": "Balance de origen",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": "{{baseUrl}}/api/v1/accounts/{{srcAccount}}/balance"
+      },
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+          "pm.test('devuelve balance y moneda', function () {",
+          "  var b = pm.response.json();",
+          "  pm.expect(b).to.have.property('balance');",
+          "  pm.expect(b.currency).to.eql('ARS');",
+          "});"
+        ] } }
+      ]
+    },
+    {
+      "name": "Crear transferencia (camino feliz)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 1500.00,\n  \"currency\": \"ARS\"\n}" },
+        "url": "{{baseUrl}}/api/v1/transfers"
+      },
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+          "pm.test('queda POSTED con id', function () {",
+          "  var t = pm.response.json();",
+          "  pm.expect(t.status).to.eql('POSTED');",
+          "  pm.expect(t.id).to.be.a('string');",
+          "});"
+        ] } }
+      ]
+    },
+    {
+      "name": "Rechazo por fondos insuficientes",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"sourceAccountId\": \"acc-ana-002\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 999999.00,\n  \"currency\": \"ARS\"\n}" },
+        "url": "{{baseUrl}}/api/v1/transfers"
+      },
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('422 Unprocessable', function () { pm.response.to.have.status(422); });",
+          "pm.test('code INSUFFICIENT_FUNDS', function () {",
+          "  pm.expect(pm.response.json().code).to.eql('INSUFFICIENT_FUNDS');",
+          "});"
+        ] } }
+      ]
+    },
+    {
+      "name": "Rechazo sin autenticacion",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 10.00,\n  \"currency\": \"ARS\"\n}" },
+        "url": "{{baseUrl}}/api/v1/transfers"
+      },
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+        ] } }
+      ]
+    },
+    {
+      "name": "Idempotencia - primera llamada",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "{{idemKey}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 50.00,\n  \"currency\": \"ARS\"\n}" },
+        "url": "{{baseUrl}}/api/v1/transfers"
+      },
+      "event": [
+        { "listen": "prerequest", "script": { "exec": [
+          "pm.collectionVariables.set('idemKey', 'pm-' + Date.now());"
+        ] } },
+        { "listen": "test", "script": { "exec": [
+          "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+          "pm.collectionVariables.set('idemId', pm.response.json().id);"
+        ] } }
+      ]
+    },
+    {
+      "name": "Idempotencia - reintento con la misma key",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "{{idemKey}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"sourceAccountId\": \"{{srcAccount}}\",\n  \"destinationAccountId\": \"{{dstAccount}}\",\n  \"amount\": 50.00,\n  \"currency\": \"ARS\"\n}" },
+        "url": "{{baseUrl}}/api/v1/transfers"
+      },
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+          "pm.test('devuelve la MISMA transferencia (no duplica)', function () {",
+          "  pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('idemId'));",
+          "});"
+        ] } }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# Build
+target/
+*.class
+
+# Env / secretos (nunca versionar valores reales)
+.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# SO
+.DS_Store
